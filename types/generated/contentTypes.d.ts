@@ -881,6 +881,36 @@ export interface ApiPaymentPayment extends Schema.CollectionType {
   };
 }
 
+export interface ApiPaymentIntegrationPaymentIntegration
+  extends Schema.CollectionType {
+  collectionName: 'payment_integrations';
+  info: {
+    singularName: 'payment-integration';
+    pluralName: 'payment-integrations';
+    displayName: 'Payment Integration';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    payload: Attribute.JSON;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::payment-integration.payment-integration',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::payment-integration.payment-integration',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiSignupSignup extends Schema.CollectionType {
   collectionName: 'signups';
   info: {
@@ -947,6 +977,7 @@ declare module '@strapi/types' {
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'api::event.event': ApiEventEvent;
       'api::payment.payment': ApiPaymentPayment;
+      'api::payment-integration.payment-integration': ApiPaymentIntegrationPaymentIntegration;
       'api::signup.signup': ApiSignupSignup;
     }
   }

@@ -1,0 +1,18 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_integrations",
+  "info": {
+    "singularName": "payment-integration",
+    "pluralName": "payment-integrations",
+    "displayName": "Payment Integration"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "payload": {
+      "type": "json"
+    }
+  }
+}
