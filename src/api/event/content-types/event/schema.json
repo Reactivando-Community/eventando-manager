@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "singularName": "event",
+    "pluralName": "events",
+    "displayName": "Event",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "pixai_token_integration": {
+      "type": "text"
+    },
+    "pixai_token_integration_id": {
+      "type": "text"
+    },
+    "payments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment.payment",
+      "mappedBy": "event"
+    },
+    "signups": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::signup.signup",
+      "mappedBy": "event"
+    }
+  }
+}

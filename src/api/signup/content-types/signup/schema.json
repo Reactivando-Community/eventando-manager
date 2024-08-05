@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "signups",
+  "info": {
+    "singularName": "signup",
+    "pluralName": "signups",
+    "displayName": "Signup",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone_number": {
+      "type": "string"
+    },
+    "payment": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::payment.payment",
+      "inversedBy": "signup"
+    },
+    "aditional_information": {
+      "type": "string"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event",
+      "inversedBy": "signups"
+    }
+  }
+}

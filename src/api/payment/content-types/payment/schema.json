@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payments",
+  "info": {
+    "singularName": "payment",
+    "pluralName": "payments",
+    "displayName": "Payment",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "value": {
+      "type": "biginteger"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event",
+      "inversedBy": "payments"
+    },
+    "signup": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::signup.signup",
+      "mappedBy": "payment"
+    },
+    "payment_identification": {
+      "type": "uid"
+    },
+    "payment_data": {
+      "type": "json"
+    }
+  }
+}
