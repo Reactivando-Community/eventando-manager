@@ -32,6 +32,28 @@
     },
     "payment_data": {
       "type": "json"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "PEDING_PAYMENT",
+        "CANCELED",
+        "CONFIRMED",
+        "REFUND"
+      ],
+      "default": "PEDING_PAYMENT"
+    },
+    "confirmed_at": {
+      "type": "datetime"
+    },
+    "canceled_at": {
+      "type": "datetime"
+    },
+    "refunded_at": {
+      "type": "datetime"
+    },
+    "pix_qr_code": {
+      "type": "text"
     }
   }
 }

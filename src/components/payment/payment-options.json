@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_payment_payment_options",
+  "info": {
+    "displayName": "Payment Options",
+    "icon": "calendar"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "value": {
+      "type": "biginteger"
+    }
+  }
+}

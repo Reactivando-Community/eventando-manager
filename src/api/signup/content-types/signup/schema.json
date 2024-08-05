@@ -27,7 +27,7 @@
       "target": "api::payment.payment",
       "inversedBy": "signup"
     },
-    "aditional_information": {
+    "additional_information": {
       "type": "string"
     },
     "event": {
@@ -35,6 +35,18 @@
       "relation": "manyToOne",
       "target": "api::event.event",
       "inversedBy": "signups"
+    },
+    "t_shirt_size": {
+      "type": "enumeration",
+      "enum": [
+        "XXS",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ]
     }
   }
 }

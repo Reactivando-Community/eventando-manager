@@ -32,6 +32,12 @@
       "relation": "oneToMany",
       "target": "api::signup.signup",
       "mappedBy": "event"
+    },
+    "payment_option": {
+      "displayName": "Payment Options",
+      "type": "component",
+      "repeatable": true,
+      "component": "payment.payment-options"
     }
   }
 }
