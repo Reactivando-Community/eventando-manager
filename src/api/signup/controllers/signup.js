@@ -82,6 +82,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           data: {
             name: body.name,
             email: body.email,
+            phone_number: body.phone_number,
             payment: paymentEntry.id,
             event: eventEntry.id,
             t_shirt_size: body.t_shirt_size,
