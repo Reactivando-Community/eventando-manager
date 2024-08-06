@@ -95,6 +95,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
       const payloadToSend = {
         ...signupEntry,
         qr_code: paymentEntry.pix_qr_code,
+        payment_id: paymentEntry.id,
       };
 
       return ctx.send(payloadToSend, 200);
