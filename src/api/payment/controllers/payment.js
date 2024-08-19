@@ -143,7 +143,13 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
             status: "CONFIRMED",
           },
           populate: ["signup", "event"],
+          pagination: {
+            page: 2,
+            pageSize: 25,
+          },
         });
+
+        console.log("payments: ", payments);
 
         // return ctx.send(payments, 200);
       } catch (err) {
@@ -154,7 +160,7 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
 
       let itemsToMail = [];
 
-      if (payments.results.length) {
+      if (payments?.results?.length) {
         payments.results.forEach((payment) => {
           const itemToMail = buildItemToMail(payment);
 
@@ -162,7 +168,7 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
         });
       }
 
-      itemsToMail.forEach((itemToMail) => sendMail(itemToMail));
+      // itemsToMail.forEach((itemToMail) => sendMail(itemToMail));
 
       return ctx.send(itemsToMail, 200);
     },
