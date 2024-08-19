@@ -168,7 +168,7 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
         });
       }
 
-      itemsToMail.forEach((itemToMail) => sendMail(itemToMail));
+      // itemsToMail.forEach((itemToMail) => sendMail(itemToMail));
 
       return ctx.send(itemsToMail, 200);
     },
