@@ -9,5 +9,14 @@ module.exports = {
         auth: false,
       },
     },
+    {
+      // Path defined with an URL parameter
+      method: "POST",
+      path: "/payment/email",
+      handler: "payment.testEmail",
+      config: {
+        auth: false,
+      },
+    },
   ],
 };

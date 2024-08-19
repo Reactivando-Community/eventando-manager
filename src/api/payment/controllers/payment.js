@@ -59,5 +59,53 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
 
       return ctx.send({ message: "event not found" }, 404);
     },
+
+    async testEmail(ctx) {
+      const { body } = ctx.request;
+
+      const { email } = body;
+
+      console.log({ email });
+
+      try {
+        await strapi
+          .plugin("email-designer")
+          .service("email")
+          .sendTemplatedEmail(
+            {
+              // required
+              to: email,
+
+              // optional if /config/plugins.js -> email.settings.defaultFrom is set
+              from: "Pedro da 8020 Digital <contato@8020digital.com.br>",
+
+              // // optional if /config/plugins.js -> email.settings.defaultReplyTo is set
+              // replyTo: "reply@example.com",
+
+              // // optional array of files
+              // attachments: [],
+            },
+            {
+              // required - Ref ID defined in the template designer (won't change on import)
+              templateReferenceId: 1,
+
+              // If provided here will override the template's subject.
+              // Can include variables like `Thank you for your order {{= USER.firstName }}!`
+              // subject: `Thank you for your order`,
+            },
+            {
+              // this object must include all variables you're using in your email template
+              name: "pedro paulo",
+              totalValue: "R$ 140,00",
+              tshirtSize: "M",
+            }
+          );
+      } catch (err) {
+        strapi.log.debug("📺: ", err);
+        return ctx.badRequest(null, err);
+      }
+
+      return ctx.send("OK", 200);
+    },
   };
 });
