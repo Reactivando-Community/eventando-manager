@@ -50,7 +50,7 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
       );
     } catch (err) {
       strapi.log.debug("📺: ", err);
-      return ctx.badRequest(null, err);
+      // return ctx.badRequest(null, err);
     }
   };
 
