@@ -17,6 +17,72 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
 
   const signupService = strapi.service("api::signup.signup");
 
+  const sendMail = async (itemToMail) => {
+    try {
+      await strapi.plugin("email-designer").service("email").sendTemplatedEmail(
+        {
+          // required
+          to: itemToMail.email,
+
+          // optional if /config/plugins.js -> email.settings.defaultFrom is set
+          from: "Pedro do Join Community <contato@8020digital.com.br>",
+
+          // // optional if /config/plugins.js -> email.settings.defaultReplyTo is set
+          // replyTo: "reply@example.com",
+
+          // // optional array of files
+          // attachments: [],
+        },
+        {
+          // required - Ref ID defined in the template designer (won't change on import)
+          templateReferenceId: itemToMail.templateReferenceId,
+
+          // If provided here will override the template's subject.
+          // Can include variables like `Thank you for your order {{= USER.firstName }}!`
+          // subject: `Thank you for your order`,
+        },
+        {
+          // this object must include all variables you're using in your email template
+          name: itemToMail.name,
+          totalValue: itemToMail.totalValue,
+          tshirtSize: itemToMail.tshirtSize,
+        }
+      );
+    } catch (err) {
+      strapi.log.debug("📺: ", err);
+      return ctx.badRequest(null, err);
+    }
+  };
+
+  const buildItemToMail = (payment) => {
+    const tshirtSizes = {
+      XS: "Muito pequeno",
+      S: "Pequeno",
+      M: "Médio",
+      L: "Grande",
+      XL: "Muito grande",
+    };
+
+    const value = Number(payment.value);
+    const templateReferenceId = value < 14000 ? 2 : 1;
+    const name = payment.signup.name;
+    const email = payment.signup.email;
+    const totalValue = `R$ ${Number(value / 100)
+      .toFixed(2)
+      .replace(".", ",")}`;
+    const tshirtSize = tshirtSizes[payment.signup.t_shirt_size];
+
+    const itemToMail = {
+      templateReferenceId,
+      name,
+      email,
+      totalValue,
+      tshirtSize,
+    };
+
+    return itemToMail;
+  };
+
   return {
     async integration(ctx) {
       const { body } = ctx.request;
@@ -43,6 +109,10 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
           return ctx.send("Error on load payment", 400);
         }
 
+        const itemToMail = buildItemToMail(paymentEntry);
+
+        sendMail(itemToMail);
+
         try {
           await paymentService.update(paymentEntry.id, {
             data: {
@@ -65,47 +135,36 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
 
       const { email } = body;
 
-      console.log({ email });
+      let payments = [];
 
       try {
-        await strapi
-          .plugin("email-designer")
-          .service("email")
-          .sendTemplatedEmail(
-            {
-              // required
-              to: email,
+        payments = await paymentService.find({
+          filters: {
+            status: "CONFIRMED",
+          },
+          populate: ["signup", "event"],
+        });
 
-              // optional if /config/plugins.js -> email.settings.defaultFrom is set
-              from: "Pedro da 8020 Digital <contato@8020digital.com.br>",
-
-              // // optional if /config/plugins.js -> email.settings.defaultReplyTo is set
-              // replyTo: "reply@example.com",
-
-              // // optional array of files
-              // attachments: [],
-            },
-            {
-              // required - Ref ID defined in the template designer (won't change on import)
-              templateReferenceId: 1,
-
-              // If provided here will override the template's subject.
-              // Can include variables like `Thank you for your order {{= USER.firstName }}!`
-              // subject: `Thank you for your order`,
-            },
-            {
-              // this object must include all variables you're using in your email template
-              name: "pedro paulo",
-              totalValue: "R$ 140,00",
-              tshirtSize: "M",
-            }
-          );
+        // return ctx.send(payments, 200);
       } catch (err) {
-        strapi.log.debug("📺: ", err);
-        return ctx.badRequest(null, err);
+        // return ctx.send(err, 400);
+
+        console.log("err: ", err);
       }
 
-      return ctx.send("OK", 200);
+      let itemsToMail = [];
+
+      if (payments.results.length) {
+        payments.results.forEach((payment) => {
+          const itemToMail = buildItemToMail(payment);
+
+          itemsToMail.push(itemToMail);
+        });
+      }
+
+      itemsToMail.forEach((itemToMail) => sendMail(itemToMail));
+
+      return ctx.send(itemsToMail, 200);
     },
   };
 });
