@@ -9670,10 +9670,9 @@ strapi-plugin-email-designer@^2.2.1:
     react-syntax-highlighter "^15.5.0"
     striptags "^3.2.0"
 
-strapi-plugin-excel-export-2024@^1.0.7:
+"strapi-plugin-excel-export-2024@https://github.com/pedrogoiania/strapi-plugin-excel-export":
   version "1.0.7"
-  resolved "https://registry.yarnpkg.com/strapi-plugin-excel-export-2024/-/strapi-plugin-excel-export-2024-1.0.7.tgz#a94ebeeb8ccc532151ac14764d65dc837ffe0858"
-  integrity sha512-VX3ntPX43JteFvvC9qt+xJix2q+vxBATdZe6d8S47w3ZXJ9sLkmHwX7BIjumuJEEvREqjrYAkBHSt4PCUc9fCw==
+  resolved "https://github.com/pedrogoiania/strapi-plugin-excel-export#4e7b19b98c1b8709e91ecf2d204fbdd64429300e"
   dependencies:
     "@strapi/design-system" "^1.6.3"
     "@strapi/helper-plugin" "^4.6.0"
