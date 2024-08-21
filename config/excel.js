@@ -11,7 +11,7 @@ module.exports = {
       ],
       relation: {
         payment: {
-          column: ["value"],
+          column: ["value", "status"],
         },
       },
       locale: "false",
