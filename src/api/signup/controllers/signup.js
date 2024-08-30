@@ -39,7 +39,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
 
       if (!paymentValue) {
         return ctx.send(
-          { status: "error", message: "Payment value not found" },
+          { status: "error", message: "Esse produto já acabou!" },
           400
         );
       }

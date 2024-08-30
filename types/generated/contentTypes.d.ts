@@ -863,6 +863,11 @@ export interface ApiEventEvent extends Schema.CollectionType {
       'api::signup.signup'
     >;
     payment_option: Attribute.Component<'payment.payment-options', true>;
+    sales: Attribute.Relation<
+      'api::event.event',
+      'oneToMany',
+      'api::sale.sale'
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -960,6 +965,35 @@ export interface ApiPaymentIntegrationPaymentIntegration
   };
 }
 
+export interface ApiSaleSale extends Schema.CollectionType {
+  collectionName: 'sales';
+  info: {
+    singularName: 'sale';
+    pluralName: 'sales';
+    displayName: 'Sale ';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    slug: Attribute.String & Attribute.Required & Attribute.Unique;
+    event: Attribute.Relation<
+      'api::sale.sale',
+      'manyToOne',
+      'api::event.event'
+    >;
+    payment_option_id: Attribute.Integer;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<'api::sale.sale', 'oneToOne', 'admin::user'> &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<'api::sale.sale', 'oneToOne', 'admin::user'> &
+      Attribute.Private;
+  };
+}
+
 export interface ApiSignupSignup extends Schema.CollectionType {
   collectionName: 'signups';
   info: {
@@ -1028,6 +1062,7 @@ declare module '@strapi/types' {
       'api::event.event': ApiEventEvent;
       'api::payment.payment': ApiPaymentPayment;
       'api::payment-integration.payment-integration': ApiPaymentIntegrationPaymentIntegration;
+      'api::sale.sale': ApiSaleSale;
       'api::signup.signup': ApiSignupSignup;
     }
   }
