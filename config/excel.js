@@ -8,6 +8,7 @@ module.exports = {
         "phone_number",
         "additional_information",
         "t_shirt_size",
+        "createdAt"
       ],
       relation: {
         payment: {
