@@ -2,7 +2,8 @@
   "collectionName": "components_payment_payment_options",
   "info": {
     "displayName": "Payment Options",
-    "icon": "calendar"
+    "icon": "calendar",
+    "description": ""
   },
   "options": {},
   "attributes": {
@@ -11,6 +12,14 @@
     },
     "value": {
       "type": "biginteger"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "can_be_listed": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

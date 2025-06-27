@@ -5,10 +5,13 @@ export interface PaymentPaymentOptions extends Schema.Component {
   info: {
     displayName: 'Payment Options';
     icon: 'calendar';
+    description: '';
   };
   attributes: {
     name: Attribute.String;
     value: Attribute.BigInteger;
+    enabled: Attribute.Boolean & Attribute.DefaultTo<false>;
+    can_be_listed: Attribute.Boolean & Attribute.DefaultTo<true>;
   };
 }
 
