@@ -55,6 +55,8 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
 
         paymentIntegrationData = response;
       } catch (err) {
+        console.log("PixAiIntegration.createPayment err: ", err);
+
         return ctx.send({ err, message: "Error on payment integration" }, 400);
       }
 
