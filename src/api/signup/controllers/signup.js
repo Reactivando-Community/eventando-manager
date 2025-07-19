@@ -31,8 +31,6 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
 
       let paymentValue = null;
 
-      console.log("eventEntry: ", eventEntry);
-
       eventEntry.payment_option.forEach(({ id, value }) => {
         if (id === body.payment_option) {
           paymentValue = value;
