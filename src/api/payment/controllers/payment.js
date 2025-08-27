@@ -19,7 +19,7 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
 
   const sendMail = async (itemToMail) => {
     try {
-      await strapi.plugin("email-designer").service("email").sendTemplatedEmail(
+      const response = await strapi.plugin("email-designer").service("email").sendTemplatedEmail(
         {
           // required
           to: itemToMail.email,
@@ -48,6 +48,8 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
           tshirtSize: itemToMail.tshirtSize,
         }
       );
+
+      console.log("send mailresponse: ", response);
     } catch (err) {
       strapi.log.debug("📺: ", err);
       // return ctx.badRequest(null, err);
