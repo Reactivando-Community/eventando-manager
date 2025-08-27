@@ -3,10 +3,10 @@ module.exports = () => ({
     config: {
       provider: "nodemailer",
       providerOptions: {
-        host: "smtps.uhserver.com",
-        port: 465,
+        host: "smtp.mailgun.org", // Mailgun's SMTP server
+        port: 587,
         auth: {
-          user: "contato@8020digital.com.br",
+          user: "eventando@8020digital.com.br",
           pass: "F1r3wall@0212",
         },
         secure: true
