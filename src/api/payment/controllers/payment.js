@@ -130,6 +130,31 @@ module.exports = createCoreController("api::payment.payment", ({ strapi }) => {
       return ctx.send({ message: "event not found" }, 404);
     },
 
+    async resendEmail(ctx) {
+      const { payment_identification } = ctx.request.body;
+
+      let paymentEntry = null;
+
+      try {
+        const response = await paymentService.find({
+          filters: {
+            payment_identification: payment_identification,
+          },
+          populate: ["signup"],
+        });
+
+        paymentEntry = response.results[0];
+      } catch (err) {
+        return ctx.send("Error on load payment", 400);
+      }
+
+      const itemToMail = buildItemToMail(paymentEntry);
+
+      sendMail(itemToMail);
+
+      return ctx.send({ message: "Email sent" }, 200);
+    },
+
     async testEmail(ctx) {
       const { body } = ctx.request;
 
