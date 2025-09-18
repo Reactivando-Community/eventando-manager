@@ -4,5 +4,5 @@ start:
 update:
 	git pull
 	yarn
-	yarn build
+	yarn build --no-optimization
 	pm2 restart eventando-manager
