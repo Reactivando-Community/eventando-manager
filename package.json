@@ -18,7 +18,7 @@
     "@strapi/provider-email-nodemailer": "^4.25.8",
     "@strapi/strapi": "4.25.6",
     "axios": "^1.7.3",
-    "mysql": "2.18.1",
+    "mysql2": "^3.15.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "5.3.4",
