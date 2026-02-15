@@ -60,6 +60,15 @@
       "relation": "manyToOne",
       "target": "api::batch.batch",
       "inversedBy": "payments"
+    },
+    "coupon": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::coupon.coupon",
+      "inversedBy": "payments"
+    },
+    "original_value": {
+      "type": "biginteger"
     }
   }
 }

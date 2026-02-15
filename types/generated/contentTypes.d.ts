@@ -855,6 +855,8 @@ export interface ApiBatchBatch extends Schema.CollectionType {
     enabled: Attribute.Boolean & Attribute.DefaultTo<true>;
     valid_from: Attribute.DateTime;
     valid_until: Attribute.DateTime;
+    exclusive_label: Attribute.String;
+    half_price_eligible: Attribute.Boolean & Attribute.DefaultTo<false>;
     product: Attribute.Relation<
       'api::batch.batch',
       'manyToOne',
@@ -880,6 +882,58 @@ export interface ApiBatchBatch extends Schema.CollectionType {
       Attribute.Private;
     updatedBy: Attribute.Relation<
       'api::batch.batch',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiCouponCoupon extends Schema.CollectionType {
+  collectionName: 'coupons';
+  info: {
+    singularName: 'coupon';
+    pluralName: 'coupons';
+    displayName: 'Coupon';
+    description: 'Discount codes for events';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Attribute.String & Attribute.Required & Attribute.Unique;
+    discount_percentage: Attribute.Integer &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          min: 1;
+          max: 100;
+        },
+        number
+      >;
+    max_uses: Attribute.Integer;
+    expires_at: Attribute.DateTime;
+    enabled: Attribute.Boolean & Attribute.DefaultTo<true>;
+    event: Attribute.Relation<
+      'api::coupon.coupon',
+      'manyToOne',
+      'api::event.event'
+    >;
+    payments: Attribute.Relation<
+      'api::coupon.coupon',
+      'oneToMany',
+      'api::payment.payment'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::coupon.coupon',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::coupon.coupon',
       'oneToOne',
       'admin::user'
     > &
@@ -922,6 +976,12 @@ export interface ApiEventEvent extends Schema.CollectionType {
       'api::event.event',
       'oneToMany',
       'api::product.product'
+    >;
+    max_slots: Attribute.Integer;
+    coupons: Attribute.Relation<
+      'api::event.event',
+      'oneToMany',
+      'api::coupon.coupon'
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -978,6 +1038,12 @@ export interface ApiPaymentPayment extends Schema.CollectionType {
       'manyToOne',
       'api::batch.batch'
     >;
+    coupon: Attribute.Relation<
+      'api::payment.payment',
+      'manyToOne',
+      'api::coupon.coupon'
+    >;
+    original_value: Attribute.BigInteger;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -1168,6 +1234,7 @@ declare module '@strapi/types' {
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'plugin::email-designer.email-template': PluginEmailDesignerEmailTemplate;
       'api::batch.batch': ApiBatchBatch;
+      'api::coupon.coupon': ApiCouponCoupon;
       'api::event.event': ApiEventEvent;
       'api::payment.payment': ApiPaymentPayment;
       'api::payment-integration.payment-integration': ApiPaymentIntegrationPaymentIntegration;

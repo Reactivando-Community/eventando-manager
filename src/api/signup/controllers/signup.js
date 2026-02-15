@@ -20,8 +20,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
       const eventId = params.id;
 
       let paymentValue = null;
+      let originalValue = null;
       let selectedBatch = null;
       let eventEntry = null;
+      let appliedCoupon = null;
 
       // 1. Resolve Batch or Legacy Payment Option
       if (body.batch_id) {
@@ -83,7 +85,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
             .count({
               where: {
                 batch: selectedBatch.id,
-                status: { $in: ["CONFIRMED", "PEDING_PAYMENT"] }, // Keeping typo from schema
+                status: { $in: ["CONFIRMED", "PEDING_PAYMENT"] },
               },
             });
 
@@ -96,6 +98,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         }
 
         paymentValue = selectedBatch.value;
+        originalValue = selectedBatch.value;
         eventEntry = selectedBatch.product.event;
       } else if (body.payment_option) {
         // Legacy flow
@@ -113,6 +116,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         eventEntry.payment_option.forEach(({ id, value }) => {
           if (id === body.payment_option) {
             paymentValue = value;
+            originalValue = value;
           }
         });
       }
@@ -125,6 +129,77 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           },
           400
         );
+      }
+
+      // 1.3 Event Capacity Check
+      if (eventEntry.max_slots) {
+        const totalEventSignups = await strapi.db
+          .query("api::payment.payment")
+          .count({
+            where: {
+              event: eventEntry.id,
+              status: { $in: ["CONFIRMED", "PEDING_PAYMENT"] },
+            },
+          });
+
+        if (totalEventSignups >= eventEntry.max_slots) {
+          return ctx.send(
+            { status: "error", message: "Evento com lotação esgotada!" },
+            400
+          );
+        }
+      }
+
+      // 1.4 Coupon Application
+      if (body.coupon_code) {
+        const coupon = await strapi.db.query("api::coupon.coupon").findOne({
+          where: {
+            code: body.coupon_code,
+            event: eventEntry.id,
+            enabled: true,
+          },
+        });
+
+        if (coupon) {
+          const now = new Date();
+          if (!coupon.expires_at || now <= new Date(coupon.expires_at)) {
+            // Check usage limit
+            if (coupon.max_uses) {
+              const uses = await strapi.db.query("api::payment.payment").count({
+                where: {
+                  coupon: coupon.id,
+                  status: { $in: ["CONFIRMED", "PEDING_PAYMENT"] },
+                },
+              });
+              if (uses >= coupon.max_uses) {
+                return ctx.send(
+                  { status: "error", message: "Cupom esgotado!" },
+                  400
+                );
+              }
+            }
+
+            appliedCoupon = coupon;
+            const discount = (paymentValue * coupon.discount_percentage) / 100;
+            paymentValue = paymentValue - discount;
+          } else {
+            return ctx.send(
+              { status: "error", message: "Cupom expirado!" },
+              400
+            );
+          }
+        } else {
+          return ctx.send({ status: "error", message: "Cupom inválido!" }, 400);
+        }
+      }
+
+      // 1.5 Student Discount (50% off if eligible)
+      if (
+        body.is_student &&
+        selectedBatch &&
+        selectedBatch.half_price_eligible
+      ) {
+        paymentValue = Math.floor(paymentValue * 0.5);
       }
 
       // 2. Payment Integration
@@ -148,8 +223,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         paymentEntry = await paymentService.create({
           data: {
             value: paymentValue,
+            original_value: originalValue,
             event: eventEntry.id,
             batch: selectedBatch ? selectedBatch.id : null,
+            coupon: appliedCoupon ? appliedCoupon.id : null,
             payment_identification:
               paymentIntegrationData.localPayment.payment_identification,
             pix_qr_code: paymentIntegrationData.localPayment.pix_qr_code,

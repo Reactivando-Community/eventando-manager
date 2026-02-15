@@ -32,6 +32,13 @@
     "valid_until": {
       "type": "datetime"
     },
+    "exclusive_label": {
+      "type": "string"
+    },
+    "half_price_eligible": {
+      "type": "boolean",
+      "default": false
+    },
     "product": {
       "type": "relation",
       "relation": "manyToOne",

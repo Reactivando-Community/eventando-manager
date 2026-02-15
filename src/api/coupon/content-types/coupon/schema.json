@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "coupons",
+  "info": {
+    "singularName": "coupon",
+    "pluralName": "coupons",
+    "displayName": "Coupon",
+    "description": "Discount codes for events"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "discount_percentage": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 100
+    },
+    "max_uses": {
+      "type": "integer"
+    },
+    "expires_at": {
+      "type": "datetime"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event",
+      "inversedBy": "coupons"
+    },
+    "payments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment.payment",
+      "mappedBy": "coupon"
+    }
+  }
+}

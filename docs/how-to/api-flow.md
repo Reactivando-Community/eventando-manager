@@ -93,3 +93,49 @@ Para realizar a inscrição, você deve enviar o `batch_id` escolhido. O sistema
 Para listar os eventos e já trazer os produtos e lotes disponíveis, utilize o parâmetro `populate`:
 
 `GET /api/events?populate[products][populate][batches]=*`
+
+---
+
+## 5. Regras Avançadas
+
+### 5.1 Capacidade Total do Evento
+
+Você pode definir um limite global de vagas no evento através do campo `max_slots` no modelo `Event`. O sistema negará novas inscrições assim que a soma de pagamentos confirmados e pendentes atingir esse valor.
+
+### 5.2 Cupons de Desconto
+
+Os cupons são vinculados a um evento e aplicam um desconto percentual.
+
+- **Payload de Criação (`POST /api/coupons`):**
+
+```json
+{
+  "data": {
+    "code": "COMMUNITY50",
+    "discount_percentage": 50,
+    "max_uses": 20,
+    "event": 1,
+    "enabled": true
+  }
+}
+```
+
+- **Uso no Signup:** Envie o campo `coupon_code` no corpo da requisição de inscrição.
+
+### 5.3 Meia-Entrada (Estudantes)
+
+1. No modelo `Batch`, marque o campo `half_price_eligible` como `true`.
+2. No momento da inscrição (`POST /api/signup/:id`), envie o campo `"is_student": true`.
+3. O sistema aplicará automaticamente 50% de desconto sobre o valor do lote (ou sobre o valor já com desconto de cupom, se houver).
+
+**Payload de Signup com Descontos:**
+
+```json
+{
+  "name": "Maria Souza",
+  "email": "maria@email.com",
+  "batch_id": 1,
+  "coupon_code": "WELCOMEOFF",
+  "is_student": true
+}
+```
