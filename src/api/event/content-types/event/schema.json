@@ -16,10 +16,8 @@
       "type": "string"
     },
     "pixai_token_integration": {
-      "type": "text"
-    },
-    "pixai_token_integration_id": {
-      "type": "text"
+      "type": "text",
+      "required": true
     },
     "payments": {
       "type": "relation",
@@ -59,6 +57,14 @@
       "relation": "oneToMany",
       "target": "api::coupon.coupon",
       "mappedBy": "event"
+    },
+    "slug": {
+      "type": "string",
+      "regex": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "unique": true
+    },
+    "uuid": {
+      "type": "uid"
     }
   }
 }
