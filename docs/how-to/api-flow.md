@@ -139,3 +139,23 @@ Os cupons são vinculados a um evento e aplicam um desconto percentual.
   "is_student": true
 }
 ```
+
+---
+
+## 6. Validações e Erros
+
+Ao realizar uma inscrição (`POST /api/signup/:id`), o sistema executa uma série de validações. Em caso de falha, retornará HTTP 400 com um JSON no formato: `{ "status": "error", "message": "..." }`.
+
+### Tabela de Erros Comuns
+
+| Cenário                 | Mensagem de Erro                               | Causa                                                     |
+| :---------------------- | :--------------------------------------------- | :-------------------------------------------------------- |
+| **Inscrição Duplicada** | "Você já está inscrito neste evento!"          | Já existe um cadastro com este e-mail para este evento.   |
+| **Lote Vencido**        | "Este lote já encerrou as vendas."             | A data atual é posterior a `valid_until` do lote.         |
+| **Lote Não Aberto**     | "Este lote ainda não abriu."                   | A data atual é anterior a `valid_from` do lote.           |
+| **Lote Esgotado**       | "As vagas para este lote esgotaram."           | O limite `max_quantity` do lote foi atingido.             |
+| **Evento Lotado**       | "Este evento já atingiu a lotação máxima."     | O limite `max_slots` do evento foi atingido.              |
+| **Cupom Inválido**      | "Cupom inválido ou desativado."                | O código enviado não existe ou o campo `enabled` é falso. |
+| **Cupom Expirado**      | "Este cupom já expirou."                       | A data de validade do cupom passou.                       |
+| **Cupom esgotado**      | "Este cupom atingiu o limite de usos."         | O cupom atingiu seu `max_uses`.                           |
+| **Produto Desativado**  | "Este produto não está disponível no momento." | O Produto ou Lote está com `enabled: false`.              |

@@ -22,8 +22,24 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
       let paymentValue = null;
       let originalValue = null;
       let selectedBatch = null;
-      let eventEntry = null;
       let appliedCoupon = null;
+
+      // 0. Duplicate Signup Check
+      const existingSignup = await strapi.db
+        .query("api::signup.signup")
+        .findOne({
+          where: {
+            email: body.email,
+            event: eventId,
+          },
+        });
+
+      if (existingSignup) {
+        return ctx.send(
+          { status: "error", message: "Você já está inscrito neste evento!" },
+          400
+        );
+      }
 
       // 1. Resolve Batch or Legacy Payment Option
       if (body.batch_id) {
@@ -41,7 +57,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           selectedBatch.product.event.id != eventId
         ) {
           return ctx.send(
-            { status: "error", message: "Lote inválido para este evento" },
+            { status: "error", message: "Lote inválido para este evento." },
             400
           );
         }
@@ -52,7 +68,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           !selectedBatch.product.event
         ) {
           return ctx.send(
-            { status: "error", message: "Este produto está desativado" },
+            {
+              status: "error",
+              message: "Este produto não está disponível no momento.",
+            },
             400
           );
         }
@@ -64,7 +83,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           now < new Date(selectedBatch.valid_from)
         ) {
           return ctx.send(
-            { status: "error", message: "Lote ainda não disponível" },
+            { status: "error", message: "Este lote ainda não abriu." },
             400
           );
         }
@@ -73,7 +92,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           now > new Date(selectedBatch.valid_until)
         ) {
           return ctx.send(
-            { status: "error", message: "Lote esgotado (prazo encerrado)" },
+            { status: "error", message: "Este lote já encerrou as vendas." },
             400
           );
         }
@@ -91,7 +110,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
 
           if (confirmedCount >= selectedBatch.max_quantity) {
             return ctx.send(
-              { status: "error", message: "Esse produto já acabou!" },
+              {
+                status: "error",
+                message: "As vagas para este lote esgotaram.",
+              },
               400
             );
           }
@@ -108,7 +130,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
 
         if (!eventEntry) {
           return ctx.send(
-            { status: "error", message: "Evento não encontrado" },
+            { status: "error", message: "Evento não encontrado." },
             404
           );
         }
@@ -125,7 +147,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         return ctx.send(
           {
             status: "error",
-            message: "Esse produto já acabou ou opção inválida!",
+            message: "Opção de pagamento inválida ou esgotada!",
           },
           400
         );
@@ -144,7 +166,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
 
         if (totalEventSignups >= eventEntry.max_slots) {
           return ctx.send(
-            { status: "error", message: "Evento com lotação esgotada!" },
+            {
+              status: "error",
+              message: "Este evento já atingiu a lotação máxima.",
+            },
             400
           );
         }
@@ -173,7 +198,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
               });
               if (uses >= coupon.max_uses) {
                 return ctx.send(
-                  { status: "error", message: "Cupom esgotado!" },
+                  {
+                    status: "error",
+                    message: "Este cupom atingiu o limite de usos.",
+                  },
                   400
                 );
               }
@@ -184,12 +212,15 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
             paymentValue = paymentValue - discount;
           } else {
             return ctx.send(
-              { status: "error", message: "Cupom expirado!" },
+              { status: "error", message: "Este cupom já expirou." },
               400
             );
           }
         } else {
-          return ctx.send({ status: "error", message: "Cupom inválido!" }, 400);
+          return ctx.send(
+            { status: "error", message: "Cupom inválido ou desativado." },
+            400
+          );
         }
       }
 
@@ -214,7 +245,10 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         paymentIntegrationData = response;
       } catch (err) {
         console.error("PixAiIntegration.createPayment err: ", err);
-        return ctx.send({ err, message: "Error on payment integration" }, 400);
+        return ctx.send(
+          { err, message: "Erro na integração de pagamento." },
+          400
+        );
       }
 
       // 3. Create Payment Entry
@@ -234,7 +268,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
           },
         });
       } catch (err) {
-        return ctx.send({ err, message: "Failed to create payment" }, 400);
+        return ctx.send({ err, message: "Falha ao criar pagamento." }, 400);
       }
 
       // 4. Create Signup Entry
@@ -246,13 +280,13 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
             email: body.email,
             phone_number: body.phone_number,
             payment: paymentEntry.id,
-            event: eventEntry.id,
+            event: eventId,
             t_shirt_size: body.t_shirt_size,
             additional_information: body.additional_information,
           },
         });
       } catch (err) {
-        return ctx.send({ err, message: "Failed to create signup" }, 400);
+        return ctx.send({ err, message: "Falha ao criar inscrição." }, 400);
       }
 
       return ctx.send(
