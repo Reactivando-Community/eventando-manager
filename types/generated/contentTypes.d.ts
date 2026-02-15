@@ -837,6 +837,110 @@ export interface PluginEmailDesignerEmailTemplate
   };
 }
 
+export interface ApiBatchBatch extends Schema.CollectionType {
+  collectionName: 'batches';
+  info: {
+    singularName: 'batch';
+    pluralName: 'batches';
+    displayName: 'Batch';
+    description: 'Specific lots for a product';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    batch_number: Attribute.Integer & Attribute.Required;
+    value: Attribute.BigInteger & Attribute.Required;
+    max_quantity: Attribute.Integer;
+    enabled: Attribute.Boolean & Attribute.DefaultTo<true>;
+    valid_from: Attribute.DateTime;
+    valid_until: Attribute.DateTime;
+    exclusive_label: Attribute.String;
+    half_price_eligible: Attribute.Boolean & Attribute.DefaultTo<false>;
+    product: Attribute.Relation<
+      'api::batch.batch',
+      'manyToOne',
+      'api::product.product'
+    >;
+    payments: Attribute.Relation<
+      'api::batch.batch',
+      'oneToMany',
+      'api::payment.payment'
+    >;
+    sales: Attribute.Relation<
+      'api::batch.batch',
+      'oneToMany',
+      'api::sale.sale'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::batch.batch',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::batch.batch',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiCouponCoupon extends Schema.CollectionType {
+  collectionName: 'coupons';
+  info: {
+    singularName: 'coupon';
+    pluralName: 'coupons';
+    displayName: 'Coupon';
+    description: 'Discount codes for events';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Attribute.String & Attribute.Required & Attribute.Unique;
+    discount_percentage: Attribute.Integer &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          min: 1;
+          max: 100;
+        },
+        number
+      >;
+    max_uses: Attribute.Integer;
+    expires_at: Attribute.DateTime;
+    enabled: Attribute.Boolean & Attribute.DefaultTo<true>;
+    event: Attribute.Relation<
+      'api::coupon.coupon',
+      'manyToOne',
+      'api::event.event'
+    >;
+    payments: Attribute.Relation<
+      'api::coupon.coupon',
+      'oneToMany',
+      'api::payment.payment'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::coupon.coupon',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::coupon.coupon',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiEventEvent extends Schema.CollectionType {
   collectionName: 'events';
   info: {
@@ -867,6 +971,17 @@ export interface ApiEventEvent extends Schema.CollectionType {
       'api::event.event',
       'oneToMany',
       'api::sale.sale'
+    >;
+    products: Attribute.Relation<
+      'api::event.event',
+      'oneToMany',
+      'api::product.product'
+    >;
+    max_slots: Attribute.Integer;
+    coupons: Attribute.Relation<
+      'api::event.event',
+      'oneToMany',
+      'api::coupon.coupon'
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -918,6 +1033,17 @@ export interface ApiPaymentPayment extends Schema.CollectionType {
     canceled_at: Attribute.DateTime;
     refunded_at: Attribute.DateTime;
     pix_qr_code: Attribute.Text;
+    batch: Attribute.Relation<
+      'api::payment.payment',
+      'manyToOne',
+      'api::batch.batch'
+    >;
+    coupon: Attribute.Relation<
+      'api::payment.payment',
+      'manyToOne',
+      'api::coupon.coupon'
+    >;
+    original_value: Attribute.BigInteger;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -965,6 +1091,49 @@ export interface ApiPaymentIntegrationPaymentIntegration
   };
 }
 
+export interface ApiProductProduct extends Schema.CollectionType {
+  collectionName: 'products';
+  info: {
+    singularName: 'product';
+    pluralName: 'products';
+    displayName: 'Product';
+    description: 'Ticket types for events';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    name: Attribute.String & Attribute.Required;
+    description: Attribute.Text;
+    enabled: Attribute.Boolean & Attribute.DefaultTo<true>;
+    can_be_listed: Attribute.Boolean & Attribute.DefaultTo<true>;
+    event: Attribute.Relation<
+      'api::product.product',
+      'manyToOne',
+      'api::event.event'
+    >;
+    batches: Attribute.Relation<
+      'api::product.product',
+      'oneToMany',
+      'api::batch.batch'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::product.product',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::product.product',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiSaleSale extends Schema.CollectionType {
   collectionName: 'sales';
   info: {
@@ -984,6 +1153,11 @@ export interface ApiSaleSale extends Schema.CollectionType {
       'api::event.event'
     >;
     payment_option_id: Attribute.Integer;
+    batch: Attribute.Relation<
+      'api::sale.sale',
+      'manyToOne',
+      'api::batch.batch'
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -1059,9 +1233,12 @@ declare module '@strapi/types' {
       'plugin::users-permissions.role': PluginUsersPermissionsRole;
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'plugin::email-designer.email-template': PluginEmailDesignerEmailTemplate;
+      'api::batch.batch': ApiBatchBatch;
+      'api::coupon.coupon': ApiCouponCoupon;
       'api::event.event': ApiEventEvent;
       'api::payment.payment': ApiPaymentPayment;
       'api::payment-integration.payment-integration': ApiPaymentIntegrationPaymentIntegration;
+      'api::product.product': ApiProductProduct;
       'api::sale.sale': ApiSaleSale;
       'api::signup.signup': ApiSignupSignup;
     }

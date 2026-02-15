@@ -26,6 +26,12 @@
     },
     "payment_option_id": {
       "type": "integer"
+    },
+    "batch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::batch.batch",
+      "inversedBy": "sales"
     }
   }
 }

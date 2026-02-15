@@ -44,6 +44,21 @@
       "relation": "oneToMany",
       "target": "api::sale.sale",
       "mappedBy": "event"
+    },
+    "products": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::product.product",
+      "mappedBy": "event"
+    },
+    "max_slots": {
+      "type": "integer"
+    },
+    "coupons": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::coupon.coupon",
+      "mappedBy": "event"
     }
   }
 }
