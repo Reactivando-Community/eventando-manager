@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "batches",
+  "info": {
+    "singularName": "batch",
+    "pluralName": "batches",
+    "displayName": "Batch",
+    "description": "Specific lots for a product"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "batch_number": {
+      "type": "integer",
+      "required": true
+    },
+    "value": {
+      "type": "biginteger",
+      "required": true
+    },
+    "max_quantity": {
+      "type": "integer"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "valid_from": {
+      "type": "datetime"
+    },
+    "valid_until": {
+      "type": "datetime"
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product",
+      "inversedBy": "batches"
+    },
+    "payments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment.payment",
+      "mappedBy": "batch"
+    },
+    "sales": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::sale.sale",
+      "mappedBy": "batch"
+    }
+  }
+}

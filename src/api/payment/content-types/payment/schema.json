@@ -54,6 +54,12 @@
     },
     "pix_qr_code": {
       "type": "text"
+    },
+    "batch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::batch.batch",
+      "inversedBy": "payments"
     }
   }
 }
