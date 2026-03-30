@@ -126,8 +126,8 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         }
       }
 
-      paymentValue = selectedBatch.value;
-      originalValue = selectedBatch.value;
+      paymentValue = Number(selectedBatch.value) || 0;
+      originalValue = Number(selectedBatch.value) || 0;
       eventEntry = selectedBatch.product.event;
 
       if (paymentValue === null) {
@@ -220,7 +220,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         paymentValue = Math.floor(paymentValue * 0.5);
       }
 
-      const isFreeEvent = paymentValue === 0;
+      const isFreeEvent = paymentValue <= 0;
 
       // 2. Payment Integration (skip for free events)
       let paymentIntegrationData = null;
