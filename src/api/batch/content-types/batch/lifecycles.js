@@ -5,53 +5,79 @@ const { PolicyError } = errors;
 
 module.exports = {
   async beforeCreate(event) {
-    const { data } = event;
-    // In Strapi v4 lifecycle, relation fields can be different formats
-    // Extract actual product ID for validation
-    let productId = data.product;
-    if (productId && typeof productId === 'object') {
-      // Handle { connect: [{ id: X }], disconnect: [] } format
-      if (Array.isArray(productId.connect) && productId.connect.length > 0) {
-        productId = productId.connect[0]?.id || productId.connect[0];
-      } else if (productId.id) {
-        productId = productId.id;
+    try {
+      const { data } = event.params;
+      if (!data) return;
+
+      // Extract product ID — Strapi v4 may pass relations as connect objects
+      let productId = data.product;
+      if (productId && typeof productId === "object") {
+        if (Array.isArray(productId.connect) && productId.connect.length > 0) {
+          const first = productId.connect[0];
+          productId = typeof first === "object" ? first.id : first;
+        } else if (productId.id) {
+          productId = productId.id;
+        } else {
+          productId = null;
+        }
       }
+      if (!productId) return;
+      await validateBatchCapacity({ ...data, product: productId });
+    } catch (err) {
+      if (err instanceof PolicyError) throw err;
+      strapi.log.error("[batch lifecycle beforeCreate] Error:", err.message);
     }
-    if (!productId) return; // No product linked, skip validation
-    await validateBatchCapacity({ ...data, product: productId });
   },
 
   async beforeUpdate(event) {
-    const { data, where } = event;
+    try {
+      const { data, where } = event.params;
+      if (!data || !where) return;
 
-    // For update, we need to fetch the existing record to know the product/event context if not provided in data
-    const existingBatch = await strapi.entityService.findOne(
-      "api::batch.batch",
-      where.id,
-      {
-        populate: { product: true },
+      const existingBatch = await strapi.entityService.findOne(
+        "api::batch.batch",
+        where.id,
+        { populate: { product: true } }
+      );
+
+      if (!existingBatch) return;
+
+      let productId =
+        data.product ||
+        (existingBatch.product && existingBatch.product.id) ||
+        null;
+      if (productId && typeof productId === "object") {
+        if (Array.isArray(productId.connect) && productId.connect.length > 0) {
+          const first = productId.connect[0];
+          productId = typeof first === "object" ? first.id : first;
+        } else if (productId.id) {
+          productId = productId.id;
+        } else {
+          productId = null;
+        }
       }
-    );
+      if (!productId) return;
 
-    // Merge existing data with new data for validation
-    const validationData = {
-      ...existingBatch,
-      ...data,
-      id: where.id,
-    };
+      const validationData = {
+        ...existingBatch,
+        ...data,
+        product: productId,
+        id: where.id,
+      };
 
-    await validateBatchCapacity(validationData);
+      await validateBatchCapacity(validationData);
+    } catch (err) {
+      if (err instanceof PolicyError) throw err;
+      strapi.log.error("[batch lifecycle beforeUpdate] Error:", err.message);
+    }
   },
 };
 
 async function validateBatchCapacity(data) {
-  // 1. Find the product and event
   const product = await strapi.entityService.findOne(
     "api::product.product",
     data.product,
-    {
-      populate: { event: true },
-    }
+    { populate: { event: true } }
   );
 
   if (!product || !product.event) return;
@@ -59,7 +85,6 @@ async function validateBatchCapacity(data) {
   const event = product.event;
   if (!event.max_slots) return;
 
-  // 2. Fetch all batches for this event to calculate current occupancy
   const allBatches = await strapi.entityService.findMany("api::batch.batch", {
     filters: {
       product: {
@@ -72,41 +97,9 @@ async function validateBatchCapacity(data) {
   const now = new Date();
   let eventOccupancy = 0;
 
-  // Helper to count active payments (Confirmed + Pending)
-  const countActivePayments = (batch) => {
-    if (!batch.payments) return 0;
-    return batch.payments.filter((p) =>
-      ["CONFIRMED", "PEDING_PAYMENT"].includes(p.status)
-    ).length;
-  };
-
-  // 3. Calculate occupancy considering open vs closed batches
-  const processBatch = (batchData, isBeingEdited = false) => {
-    const isExpired =
-      batchData.valid_until && now > new Date(batchData.valid_until);
-    const isEnabled = batchData.enabled !== false;
-    const isOpen = isEnabled && !isExpired;
-
-    const soldCount = isBeingEdited
-      ? countActivePayments(batchData)
-      : batchData.payments?.length || 0;
-    // Note: if isBeingEdited, we already have the payments populated.
-    // For the one being created/updated, we'll use the data provided.
-
-    if (isOpen) {
-      // Open batch: reserve the max_quantity or current sales if it somehow exceeded
-      return Math.max(soldCount, batchData.max_quantity || 0);
-    } else {
-      // Closed batch: count only what was actually sold/is pending
-      return soldCount;
-    }
-  };
-
-  // Add occupancy from existing batches (excluding the one being updated)
   for (const b of allBatches) {
     if (data.id && b.id === data.id) continue;
 
-    // We need to fetch payment count for each batch if not populated accurately
     const soldCount = await strapi.db.query("api::payment.payment").count({
       where: {
         batch: b.id,
@@ -124,7 +117,6 @@ async function validateBatchCapacity(data) {
     }
   }
 
-  // Add occupancy for the batch being created/updated
   const currentBatchSoldCount = data.id
     ? await strapi.db.query("api::payment.payment").count({
         where: {
@@ -134,7 +126,8 @@ async function validateBatchCapacity(data) {
       })
     : 0;
 
-  const isCurrentExpired = data.valid_until && now > new Date(data.valid_until);
+  const isCurrentExpired =
+    data.valid_until && now > new Date(data.valid_until);
   const isCurrentOpen = data.enabled !== false && !isCurrentExpired;
 
   if (isCurrentOpen) {
@@ -143,7 +136,6 @@ async function validateBatchCapacity(data) {
     eventOccupancy += currentBatchSoldCount;
   }
 
-  // 4. Compare with Event.max_slots
   if (eventOccupancy > event.max_slots) {
     throw new PolicyError(
       `Capacidade excedida! A ocupação calculada (${eventOccupancy}) ultrapassa o limite do evento (${event.max_slots}). Dica: Lotes encerrados contam apenas as vendas reais.`
