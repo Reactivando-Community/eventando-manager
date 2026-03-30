@@ -42,120 +42,93 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         );
       }
 
-      // 1. Resolve Batch, Legacy Payment Option, or Free Event
-      if (body.batch_id) {
-        selectedBatch = await strapi.entityService.findOne(
-          "api::batch.batch",
-          body.batch_id,
-          {
-            populate: { product: { populate: ["event"] } },
-          }
+      // 1. Resolve Batch (always required — free events use value=0 batches)
+      if (!body.batch_id) {
+        return ctx.send(
+          { status: "error", message: "Selecione um lote para se inscrever." },
+          400
         );
+      }
 
-        if (
-          !selectedBatch ||
-          !selectedBatch.product ||
-          selectedBatch.product.event.id != eventId
-        ) {
-          return ctx.send(
-            { status: "error", message: "Lote inválido para este evento." },
-            400
-          );
+      selectedBatch = await strapi.entityService.findOne(
+        "api::batch.batch",
+        body.batch_id,
+        {
+          populate: { product: { populate: ["event"] } },
         }
+      );
 
-        if (
-          !selectedBatch.enabled ||
-          !selectedBatch.product.enabled ||
-          !selectedBatch.product.event
-        ) {
+      if (
+        !selectedBatch ||
+        !selectedBatch.product ||
+        selectedBatch.product.event.id != eventId
+      ) {
+        return ctx.send(
+          { status: "error", message: "Lote inválido para este evento." },
+          400
+        );
+      }
+
+      if (
+        !selectedBatch.enabled ||
+        !selectedBatch.product.enabled ||
+        !selectedBatch.product.event
+      ) {
+        return ctx.send(
+          {
+            status: "error",
+            message: "Este produto não está disponível no momento.",
+          },
+          400
+        );
+      }
+
+      // 1.1 Validity window check
+      const now = new Date();
+      if (
+        selectedBatch.valid_from &&
+        now < new Date(selectedBatch.valid_from)
+      ) {
+        return ctx.send(
+          { status: "error", message: "Este lote ainda não abriu." },
+          400
+        );
+      }
+      if (
+        selectedBatch.valid_until &&
+        now > new Date(selectedBatch.valid_until)
+      ) {
+        return ctx.send(
+          { status: "error", message: "Este lote já encerrou as vendas." },
+          400
+        );
+      }
+
+      // 1.2 Stock control (Confirmed + Recent Pending)
+      if (selectedBatch.max_quantity) {
+        const confirmedCount = await strapi.db
+          .query("api::payment.payment")
+          .count({
+            where: {
+              batch: selectedBatch.id,
+              status: { $in: ["CONFIRMED", "PEDING_PAYMENT"] },
+            },
+          });
+
+        if (confirmedCount >= selectedBatch.max_quantity) {
           return ctx.send(
             {
               status: "error",
-              message: "Este produto não está disponível no momento.",
+              message: "As vagas para este lote esgotaram.",
             },
             400
           );
         }
-
-        // 1.1 Validity window check
-        const now = new Date();
-        if (
-          selectedBatch.valid_from &&
-          now < new Date(selectedBatch.valid_from)
-        ) {
-          return ctx.send(
-            { status: "error", message: "Este lote ainda não abriu." },
-            400
-          );
-        }
-        if (
-          selectedBatch.valid_until &&
-          now > new Date(selectedBatch.valid_until)
-        ) {
-          return ctx.send(
-            { status: "error", message: "Este lote já encerrou as vendas." },
-            400
-          );
-        }
-
-        // 1.2 Stock control (Confirmed + Recent Pending)
-        if (selectedBatch.max_quantity) {
-          const confirmedCount = await strapi.db
-            .query("api::payment.payment")
-            .count({
-              where: {
-                batch: selectedBatch.id,
-                status: { $in: ["CONFIRMED", "PEDING_PAYMENT"] },
-              },
-            });
-
-          if (confirmedCount >= selectedBatch.max_quantity) {
-            return ctx.send(
-              {
-                status: "error",
-                message: "As vagas para este lote esgotaram.",
-              },
-              400
-            );
-          }
-        }
-
-        paymentValue = selectedBatch.value;
-        originalValue = selectedBatch.value;
-        eventEntry = selectedBatch.product.event;
-      } else if (body.payment_option) {
-        // Legacy flow
-        eventEntry = await eventService.findOne(eventId, {
-          populate: ["payment_option"],
-        });
-
-        if (!eventEntry) {
-          return ctx.send(
-            { status: "error", message: "Evento não encontrado." },
-            404
-          );
-        }
-
-        eventEntry.payment_option.forEach(({ id, value }) => {
-          if (id === body.payment_option) {
-            paymentValue = value;
-            originalValue = value;
-          }
-        });
-      } else {
-        // Free event flow (no batch or payment option required)
-        eventEntry = await eventService.findOne(eventId);
-
-        if (!eventEntry) {
-          return ctx.send(
-            { status: "error", message: "Evento não encontrado." },
-            404
-          );
-        }
-
-        paymentValue = 0;
-        originalValue = 0;
       }
+
+      paymentValue = selectedBatch.value;
+      originalValue = selectedBatch.value;
+      eventEntry = selectedBatch.product.event;
 
       if (paymentValue === null) {
         return ctx.send(
