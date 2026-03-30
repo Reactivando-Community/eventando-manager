@@ -69,6 +69,9 @@
     },
     "original_value": {
       "type": "biginteger"
+    },
+    "payment_link": {
+      "type": "string"
     }
   }
 }

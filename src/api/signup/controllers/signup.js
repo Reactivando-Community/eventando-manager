@@ -23,6 +23,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
       let originalValue = null;
       let selectedBatch = null;
       let appliedCoupon = null;
+      let eventEntry = null;
 
       // 0. Duplicate Signup Check
       const existingSignup = await strapi.db
@@ -41,7 +42,7 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         );
       }
 
-      // 1. Resolve Batch or Legacy Payment Option
+      // 1. Resolve Batch, Legacy Payment Option, or Free Event
       if (body.batch_id) {
         selectedBatch = await strapi.entityService.findOne(
           "api::batch.batch",
@@ -141,9 +142,22 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
             originalValue = value;
           }
         });
+      } else {
+        // Free event flow (no batch or payment option required)
+        eventEntry = await eventService.findOne(eventId);
+
+        if (!eventEntry) {
+          return ctx.send(
+            { status: "error", message: "Evento não encontrado." },
+            404
+          );
+        }
+
+        paymentValue = 0;
+        originalValue = 0;
       }
 
-      if (!paymentValue) {
+      if (paymentValue === null) {
         return ctx.send(
           {
             status: "error",
@@ -233,22 +247,26 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         paymentValue = Math.floor(paymentValue * 0.5);
       }
 
-      // 2. Payment Integration
-      let paymentIntegrationData = null;
-      try {
-        const response = await PixAiIntegration.createPayment({
-          description: `Inscrição no evento ${eventEntry.name}: ${body.name} - ${body.email}`,
-          value: paymentValue,
-          token: eventEntry.pixai_token_integration,
-        });
+      const isFreeEvent = paymentValue === 0;
 
-        paymentIntegrationData = response;
-      } catch (err) {
-        console.error("PixAiIntegration.createPayment err: ", err);
-        return ctx.send(
-          { err, message: "Erro na integração de pagamento." },
-          400
-        );
+      // 2. Payment Integration (skip for free events)
+      let paymentIntegrationData = null;
+      if (!isFreeEvent) {
+        try {
+          const response = await PixAiIntegration.createPayment({
+            description: `Inscrição no evento ${eventEntry.name}: ${body.name} - ${body.email}`,
+            value: paymentValue,
+            token: eventEntry.pixai_token_integration,
+          });
+
+          paymentIntegrationData = response;
+        } catch (err) {
+          console.error("PixAiIntegration.createPayment err: ", err);
+          return ctx.send(
+            { err, message: "Erro na integração de pagamento." },
+            400
+          );
+        }
       }
 
       // 3. Create Payment Entry
@@ -262,9 +280,18 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
             batch: selectedBatch ? selectedBatch.id : null,
             coupon: appliedCoupon ? appliedCoupon.id : null,
             payment_identification:
-              paymentIntegrationData.localPayment.payment_identification,
-            pix_qr_code: paymentIntegrationData.localPayment.pix_qr_code,
-            payment_data: paymentIntegrationData,
+              isFreeEvent
+                ? `FREE_${Date.now()}`
+                : paymentIntegrationData.localPayment.payment_identification,
+            pix_qr_code: isFreeEvent
+              ? null
+              : paymentIntegrationData.localPayment.pix_qr_code,
+            payment_link: isFreeEvent
+              ? null
+              : paymentIntegrationData.localPayment.payment_link,
+            payment_data: isFreeEvent ? null : paymentIntegrationData,
+            status: isFreeEvent ? "CONFIRMED" : "PEDING_PAYMENT",
+            confirmed_at: isFreeEvent ? new Date() : null,
           },
         });
       } catch (err) {
@@ -293,7 +320,9 @@ module.exports = createCoreController("api::signup.signup", ({ strapi }) => {
         {
           ...signupEntry,
           qr_code: paymentEntry.pix_qr_code,
+          payment_link: paymentEntry.payment_link,
           payment_id: paymentEntry.id,
+          is_free: isFreeEvent,
         },
         200
       );
