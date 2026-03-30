@@ -6,7 +6,19 @@ const { PolicyError } = errors;
 module.exports = {
   async beforeCreate(event) {
     const { data } = event;
-    await validateBatchCapacity(data);
+    // In Strapi v4 lifecycle, relation fields can be different formats
+    // Extract actual product ID for validation
+    let productId = data.product;
+    if (productId && typeof productId === 'object') {
+      // Handle { connect: [{ id: X }], disconnect: [] } format
+      if (Array.isArray(productId.connect) && productId.connect.length > 0) {
+        productId = productId.connect[0]?.id || productId.connect[0];
+      } else if (productId.id) {
+        productId = productId.id;
+      }
+    }
+    if (!productId) return; // No product linked, skip validation
+    await validateBatchCapacity({ ...data, product: productId });
   },
 
   async beforeUpdate(event) {
