@@ -26,6 +26,10 @@
       "type": "boolean",
       "default": true
     },
+    "deleted": {
+      "type": "boolean",
+      "default": false
+    },
     "event": {
       "type": "relation",
       "relation": "manyToOne",

@@ -26,6 +26,10 @@
       "type": "boolean",
       "default": true
     },
+    "deleted": {
+      "type": "boolean",
+      "default": false
+    },
     "valid_from": {
       "type": "datetime"
     },
