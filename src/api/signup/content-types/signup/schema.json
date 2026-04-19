@@ -47,6 +47,13 @@
         "XL",
         "XXL"
       ]
+    },
+    "checked_in": {
+      "type": "boolean",
+      "default": false
+    },
+    "checked_in_at": {
+      "type": "datetime"
     }
   }
 }
