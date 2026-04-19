@@ -16,8 +16,7 @@
       "type": "string"
     },
     "pixai_token_integration": {
-      "type": "text",
-      "required": true
+      "type": "text"
     },
     "payments": {
       "type": "relation",
